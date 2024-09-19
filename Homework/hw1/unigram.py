@@ -28,7 +28,7 @@ class Unigram(object):
         count: collections.Counter = collections.Counter()
         total: int = 0
         for line in data:
-            for a in list(line) + [utils.END_TOKEN]:
+            for a in list(line) + [utils.END_TOKEN]: # a: cHaracter in eAch lIne
                 self.vocab.add(a)
                 # a = self.vocab.numberize(a)
                 count[a] += 1
