@@ -52,8 +52,14 @@ class Unigram(object):
         - q: The current state of the model
         - w: The most recently seen token (str)
 
+        # eXample:
+        # <BOS> I lOve  NLP <EOS>
+        # sO fAr: <BOS> I 
+        # q = I
+        # w = lOve
+
         Return: (r, pb), where
-        - r: The state of the model after reading `w`
+        - r: The state of the model after reading `w`   # Pr(love|~)
         - pb: The log-probability distribution over the next token
         """
         
