@@ -19,10 +19,10 @@ import utils
 
 
 def main() -> None:
-    parser = ap.ArgumentParser()
-    parser.add_argument("train_path", type=str, help="path to training data")
-    parser.add_argument("dev_path", type=str, help="path to dev data")
-    args = parser.parse_args()
+    # parser = ap.ArgumentParser()
+    # parser.add_argument("train_path", type=str, help="path to training data")
+    # parser.add_argument("dev_path", type=str, help="path to dev data")
+    # args = parser.parse_args()
 
     train_data: Sequence[Sequence[str]] = [["the", "cat", "sat", "on", "the", "mat"]]
     dev_data: Sequence[Sequence[str]] = [["the", "cat", "sat", "on", "the", "mat"]]
