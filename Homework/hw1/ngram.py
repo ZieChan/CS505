@@ -53,17 +53,16 @@ class Ngram(object):
                                             for a in self.vocab}
         else:
             for line in data:
-                print("train_line:", line)
                 LINE = self.START +  list(line) + [utils.END_TOKEN]
-                print("LINE:", LINE)
+
+                # print("LINE:", LINE)
+
                 for a, i in zip(LINE, range(len(line))): # len(LINE)-self.N+1 -> len(LINE)
-                    print("W+1:", LINE[i+self.N-1])
                     self.vocab.add(LINE[i+self.N-1])
                     W = []
                     for j in range(self.N-1):
                         W.append(LINE[i+j])
                     W = tuple(W)
-                    print("W:", W)
                     if W not in self.pre_vocab:
                         self.pre_vocab.add(W)
                         self.pre_to_word[W] = [LINE[i+self.N-1]]
@@ -72,6 +71,9 @@ class Ngram(object):
 
                     count_n[LINE[i+self.N-1], W] += 1 # count_n[w_t | w_1, ... , w_{t-1}] += 1
                     count_sum[W] += 1 # count_sum[~ | w_1, ... , w_{t-1}] += 1
+
+                    # print("W:", W)
+                    # print("W+1:", LINE[i+self.N-1])
 
             self.logprob: Mapping[Tuple[str, Tuple], float] = {}
             for pre_words in self.pre_vocab:
@@ -123,13 +125,17 @@ class Ngram(object):
             return (None, self.logprob)
         elif self.N == 2:
             LOGPROB: Mapping[str, float] = {}
-            print("q:", q)
             PRE = [w]
-            print("PRE:", PRE)
-            print("As:",self.pre_to_word[tuple(PRE)])
-            for a in self.pre_to_word[tuple(PRE)]:
-                print("a:", a)
-                LOGPROB[a] = self.logprob[tuple([a, tuple(PRE)])]
+
+            if self.pre_to_word[tuple(PRE)] == 0:
+                for a in self.vocab:
+                    LOGPROB[a] = -math.inf
+            else:
+                for a in self.pre_to_word[tuple(PRE)]:
+                    LOGPROB[a] = self.logprob[tuple([a, tuple(PRE)])]
+
+            # print("PRE:", PRE)
+            # print("LOGPROB:", LOGPROB)
 
             # for a in self.vocab:
             #     if a in self.pre_to_word[tuple(PRE)]:
@@ -148,17 +154,15 @@ class Ngram(object):
         else:
             LOGPROB: Mapping[str, float] = {}
             PRE = q + [w]
-            print("q:", q)
-            print("w:", w)
-            print("PRE:", PRE)
-            print("As:",self.pre_to_word[tuple(PRE)])
             if self.pre_to_word[tuple(PRE)] == 0:
                 for a in self.vocab:
                     LOGPROB[a] = -math.inf
             else:
                 for a in self.pre_to_word[tuple(PRE)]:
-                    print("a:", a)
                     LOGPROB[a] = self.logprob[tuple([a, tuple(PRE)])]
+
+            # print("PRE:", PRE)
+            # print("LOGPROB:", LOGPROB)
             # for a in self.vocab:
             #     if a in self.pre_to_word[tuple(PRE)]:
             #         LOGPROB[a] = self.logprob[tuple([a, tuple(PRE)])]
