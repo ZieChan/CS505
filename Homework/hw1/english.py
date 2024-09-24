@@ -6,6 +6,7 @@ import utils
 from typing import Tuple
 
 
+
 def train_ngram(N: int, train_path: str = "data/english/train") -> ngram.Ngram:
     train_data: Sequence[Sequence[str]] = utils.read_mono(train_path)
     return ngram.Ngram(N, train_data)
@@ -14,7 +15,11 @@ def dev_ngram(model: ngram.Ngram, dev_path: str = "data/english/dev") -> Tuple[i
     num_correct: int = 0
     num_total: int = 0
     dev_data: Sequence[Sequence[str]] = utils.read_mono(dev_path)
+    LEN = len(dev_data)
+    l = 0
     for dev_line in dev_data:
+        l += 1
+        print(f"Processing line {l} of {LEN}")
         q = model.start()
 
         for c_input, c_actual in zip([utils.START_TOKEN] + dev_line, dev_line + [utils.END_TOKEN]):
