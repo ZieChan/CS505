@@ -15,12 +15,12 @@ class CharPredictor(object):
             training.
       """
       def __init__(self,
-                 n: int = 3,
+                 n: int = 2,
                  map_path: str = "./data/mandarin/charmap",
                  train_path: str = "./data/mandarin/train.han") -> None:
             self.n: int = n
-            self.map_char_to_pron: Mapping[str, str] 
-            self.map_pron_to_char: Mapping[str, str]
+            self.map_char_to_pron: Mapping[str, str] = {}
+            self.map_pron_to_char: Mapping[str, str] = {}
             self.train_data: Sequence[str]
 
             with open(map_path, "r", encoding="utf8") as f:
@@ -31,16 +31,30 @@ class CharPredictor(object):
 
             self.train_data = mandarin.load_and_unmask_chars(self.map_char_to_pron, train_path)
 
+            for i in range(len(self.train_data)):
+                  self.train_data[i] = ['<BOS>'] + self.train_data[i] + ['<EOS>']
+
             self.model = ngram.Ngram(self.n, self.train_data , 1)
 
       def candidates(self, token: str) -> Sequence[str]:
-            return [pron for pron in self.model.step(self.model.start(), token)[1].keys()]
+            (q, p) = self.model.step(self.model.start(), token)
+            cand = []
+            for k in p.keys():
+                  cand = cand + [k]
+            return cand
+            # return [pron for pron in self.model.step(self.model.start(), token)[1].keys()]
 
       def start(self) -> Sequence[str]:
             return self.model.start()
       
       def step(self, q: Sequence[str], w: str) -> Tuple[Sequence[str], Mapping[str, float]]:
             return self.model.step(q, w)
+      
+      def data10(self) -> Sequence[str]:
+            d = []
+            for i in range(10):
+                  d = d + [self.train_data[i]]
+            return d
 
 
             

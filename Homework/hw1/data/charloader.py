@@ -3,7 +3,17 @@ from collections.abc import Sequence
 import numpy
 
 
-# PYTHON PROJECT IMPORTS
+import re
+
+# 定义一个函数用来在中文字符前后加上空格
+def add_spaces_around_chinese(text: str) -> str:
+    # 使用正则表达式匹配所有的中文字符
+    pattern = re.compile(r'[\u4e00-\u9fff]')
+    # 在每个匹配的中文字符前后加上空格
+    new_text = pattern.sub(lambda x: f' {x.group(0)} ', text)
+    # 去除可能多余的空格
+    new_text = re.sub(r'\s+', ' ', new_text).strip()
+    return new_text
 
 
 def load_chars_from_file(filepath: str) -> Sequence[str]:
@@ -21,7 +31,8 @@ def load_chars_from_file(filepath: str) -> Sequence[str]:
 def load_lines_from_file(filepath: str) -> Sequence[str]:
     l: Sequence[str] = None
     with open(filepath, "r", encoding="utf8") as f:
-        l = [line.rstrip("\n") for line in f]
+        # l = [line.rstrip("\n") for line in f]
+        l = [add_spaces_around_chinese(line.rstrip("\n")) for line in f]
     return l
 
 

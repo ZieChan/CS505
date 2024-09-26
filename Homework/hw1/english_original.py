@@ -1,7 +1,7 @@
 
 # SYSTEM IMPORTS
 from collections.abc import Sequence
-import ngram 
+import ngram_original as ngram 
 import utils
 from typing import Tuple
 
@@ -19,7 +19,7 @@ def dev_ngram(model: ngram.Ngram, dev_path: str = "data/english/dev") -> Tuple[i
     l = 0
     for dev_line in dev_data:
         l += 1
-        # print(f"Processing line {l} of {LEN}")
+        print(f"Processing line {l} of {LEN}")
         q = model.start()
 
         INPUT = dev_line[:-1]
@@ -29,9 +29,13 @@ def dev_ngram(model: ngram.Ngram, dev_path: str = "data/english/dev") -> Tuple[i
 
         for c_input, c_actual in zip(INPUT, OUTPUT):
             q, p = model.step(q, c_input)
+            # c_predicted = max(p.keys(), key=lambda k: p[k])
+            # if c_predicted == c_actual:
+            #     num_correct += 1
+            # num_total += 1
             c_predicted = max(p.keys(), key=lambda k: p[k])
-            if c_predicted != c_actual:
-                num_correct += 1
+
+            num_correct += int(c_predicted == c_actual)
             num_total += 1
 
     return num_correct, num_total

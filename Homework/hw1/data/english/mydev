@@ -1,1 +1,100 @@
-the cat sat on the mat
+i wanted to update to 12.04 and after this i reboot the system choose the new kernel
+ok 1 sec
+bekks, was, he said he is not running that kernel
+Mulder911  type ps -e|less <-- which has number 88 ?
+XiaolinDraconis, Is that what is on the usb, you want it clean to start with, no hidden trash with stuff in it either.
+pepee: Then how can we investigate what is causing that error...?
+I suppose it means, the PID will not necessarily be the same
+bekks, reading the logs, it should say what process was this
+wilee-nilee, no thats my home directory, but its not the problem as mini.iso loads just fine, i think its not mounting cause its on another partition that is mounted as well
+bekks, at least that's what a bit of googling shows
+on this kernel i don`t see pid88
+google  "/proc/*/oom_adj is deprecated, please use /proc/*/oom_score_adj"
+XiaolinDraconis, Drag it to your desktop and mount it there.
+Mulder911, in a terminal, type:   grep -n "oom_adj is deprecated" /var/log/*
+wilee-nilee, that was my thoughts as well
+/var/log/kern.log:751:Oct 31 00:46:10 bt kernel: [    1.631658] udevd (92): /proc/92/oom_adj is deprecated, please use /proc/92/oom_score_adj instead.
+wilee-nilee, that failed as well
+XiaolinDraconis, I always reformat the usb as well each time to be sure it is clean, if I do a load this way.
+wilee-nilee, the usb is freshly formatted
+XiaolinDraconis, So what is the actual failure?
+Mulder911: So which process is PID 92?
+wilee-nilee, the iso wont mount
+wilee-nilee, opening it with archive manager and can see the contents from there
+Mulder911, in the terminal, type:   grep -n "Linux version" /var/log/kern.log
+bekks, PID 92
+XiaolinDraconis, Not even with a right click on it then clicking on open with archive mounter
+bekks, PID 92 is udevd
+4:Oct 31 00:46:10 bt kernel: [    0.000000] Linux version 3.2.6 (root@bt) (gcc version 4.4.3 (Ubuntu 4.4.3-4ubuntu5) ) #1 SMP Fri Feb 17 10:34:20 EST 2012
+816:Oct 31 01:05:54 bt kernel: [    0.000000] Linux version 3.2.6 (root@bt) (gcc version 4.4.3 (Ubuntu 4.4.3-4ubuntu5) ) #1 SMP Fri Feb 17 10:34:20 EST 2012
+1672:Oct 31 19:14:47 bt kernel: [    0.000000] Linux version 3.2.6 (root@bt) (gcc version 4.4.3 (Ubuntu 4.4.3-4ubuntu5) ) #1 SMP Fri Feb 17 10:34:20 EST 2012
+2543:Nov  1 00:19:12 bt kernel: [    0.000000] Linux version 2.6.32-44-generic (buildd@allspice) (gcc version 4.4.3 (Ubuntu 4.4.3-4ubuntu5.1) ) #98-Ubuntu SMP Mon Sep 24 17:27:10 UTC 2012 (Ubuntu 2.6.32-44.98-generic 2.6.32.59+drm33.24)
+wilee-nilee, thats how ive been trying to do it, atm i have it open in archive manager
+XiaolinDraconis, Do you se all the files?
+wilee-nilee, as far as i can tell i do, have had a problem opening any of the folders
+XiaolinDraconis, If you see all the files like I posted, the the exstract should run it just takes a bit to do it I just ran it, about 8-1o min I think.
+wilee-nilee, trying it again
+Mulder911, try upgrating now and see it if installs a new kernel, I suppose this should solve it
+so upgrade one more time
+Mulder911, yes. AFAIK 3.2.6 is not the latest kernel in 12.04.1
+ok
+i`ll try
+wilee-nilee, of course this time it finishes in 40 seconds
+sudo apt-get update && sudo apt-get dist-upgrade
+Which will not upgrade the kernel.
+bekks, what's the current kernel in 12.04?
+i`m upgrading with kpackagekit
+pepee: No 12.04 handy here, maybe you can take alook at packages.ubuntu.com
+bekks, why do you say it will not upgrade the kernel?
+pepee: Because thats the truth. apt-get will keep back kernel packages. You have to update them explicitely.
+XiaolinDraconis, What I have found with the W7 ISO is that it is locked unless mounted that is probably why, I'm not sure of other ways to mount it, I have been using the usb loader I posted for a coulple of years now and have not had to do it this way. I know it works though has everytime I did in the past. YOu might just install the multisystem loader and use it
+wilee-nilee, i hope this works, ive got 2 hours to try and get my girls laptop back to working condition. i thought gparted was still simulating and hit cancel, man was i wrong
+bekks, dist-upgrade does that for you
+pepee: Yes, and we were talking about apt-get upgrade ;)
+but... 3.2.6 is not from the repos, is it?
+The 12.04 kernel version is 3.2.0-xyz
+XiaolinDraconis, Hehe not the person to disappoint. ;)
+pepee: Nope, it isnt.
+bekks, I was talking about upgrade, generically. I always use dist-upgrade, so I don't know much about other package managers
+wilee-nilee, yeah specially not after shes been at work most of the day while i get to sit around the house
+XiaolinDraconis, hehe you are in deep dodo now. ;)
+wilee-nilee, unless magic happens and the next 2 hours go flawlessly (never in my lifetime)
+XiaolinDraconis, I clone all my installs, you might do this after you are setup with clonezilla.
+wilee-nilee, clonezilla is what ruined my windows installation in the first place
+XiaolinDraconis, If I remember you cloned it to a ext4 right?
+how can i use a .htaccess for my phpmyadmin directory ?
+i tried enabling override all in /etc/phpmyadmin/apache.conf
+didnt help
+wilee-nilee, and then did it again (hadnt deleted the original partition yet) on a fresh ntfs partition
+i tried a bunch of other stuff which didn't help
+and now i kindof gave up and figured i'd ask on IRC
+wilee-nilee, which is when i was told to delete the original because it kept booting that instead of the new one
+firefox version 16.0.2 always ask for zip code on google shop and ebay how to save my zip ????
+wilee-nilee, only to find out the new one failed to boot cause it wasnt in the same location
+hi i am trying to set up a dhcpd and i have become a little lost i think i have one running but no idea which one it is and no matter what i do the windows box on the other end of the wire seems to get an ip of 192.168.0.20 how can i work out where its getting it from ?
+XiaolinDraconis, I have never had clonezilla fail, but I follow some rules, I have the windows fully defragged to the front of the disc and make sure in general it is good shape by running a chkdsk every so often on it
+Hi, i need a little hand to help me get back system sound on ubuntu 11.10, can anyone help me? After i tried to install google gadgets, my sound device doesnt work correctly
+XiaolinDraconis, Lots of other cloners though.
+wilee-nilee, as far as i know windows checks to make sure the hardware hasnt changed and when it detects a major change it requires re-activation
+wilee-nilee, all my old discs ended up getting trashed when i moved
+how do i make ubuntu into its own proxy
+hi, i use phpmyadmin on ubuntu 12.04, and i want to use a .htaccess in my phpmyadmin dir, but it doesn't seem to work, i set AllowOverride All for the dir in /etc/phpmyadmin/apache.conf
+Why i cant access sound configuration on my Ubuntu 11.10?!?
+XiaolinDraconis, That is in system changes if the update reading is really far off I have only seen that one time with a XP setup. I have W7 pro and it has unlimited images that can be made although it will overwrite the last one if saved in the same place. I don't really use windows much, but I keep it squeaky clean with bleachbit and defragging and some other apps to have it in good shape and I have no problem just throwing in a fresh install o
+nce in awhile.
+wilee-nilee, right but i was attempting to move it to a new hard drive, ive never been able to do that without having to use the rescue disc afterwards
+anyone?
+wilee-nilee, im seeing lots of topics online where several people have done it, sadly its not been my luck
+XiaolinDraconis, You will need the recovery if the mbr is not saved, clonezilla saves the mbr, that is why I like it.
+If the mbr has grub there though you will need to reload it if the linux install is not included.
+wilee-nilee, it wasnt on the first partition, the mbr was over-written by grub.
+wilee-nilee, and somehow i just ran out of space on a 4GB drive, told ya luck isnt in my bag of tricks
+wilee-nilee, nautilus tells me i got 1GB left on the drive.... GRRRR
+XiaolinDraconis, Did you show the hidden files and makes sure there was nothing there, if you were finally loading it with the ISO?
+wilee-nilee, i was copying files from the extracted directory, one file said something about no space left on the disk, splicing error or something
+wilee-nilee, im formating it to fat32 now and gonna try the multiboot tool
+XiaolinDraconis, cool good luck the windows will be in the grub4 choice of the grub menu I believe, you have to look for it
+any idea how to install create ubuntu on sofware raid and LVM
+nobody that ever did this? :s
+with that usb loader it does not just show in the main grub menu you will see. XiaolinDraconis
+hi, i use phpmyadmin on ubuntu 12.04, and i want to use a .htaccess in my phpmyadmin dir, but it doesn't seem to work, i set AllowOverride All for the dir in /etc/phpmyadmin/apache.conf

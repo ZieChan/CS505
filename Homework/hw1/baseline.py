@@ -20,7 +20,7 @@ def dev_unigram(model: unigram.Unigram, dev_path: str = "data/english/dev") -> T
             q, p = model.step(q, c_input)
             c_predicted = max(p.keys(), key=lambda k: p[k])
 
-            if c_predicted != c_actual:
+            if c_predicted == c_actual:
                 num_correct += 1
             num_total += 1
 

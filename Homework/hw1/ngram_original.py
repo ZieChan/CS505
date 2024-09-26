@@ -111,14 +111,8 @@ class Ngram(object):
         - q: The current state of the model
         - w: The most recently seen token (str)
 
-        # eXample:
-        # <BOS> I lOve  NLP <EOS>
-        # sO fAr: <BOS> I 
-        # q = I
-        # w = lOve
-
         Return: (r, pb), where
-        - r: The state of the model after reading `w`   # Pr(love|~)
+        - r: The state of the model after reading `w`  
         - pb: The log-probability distribution over the next token
         """
         if self.N == 1:
@@ -156,7 +150,8 @@ class Ngram(object):
             PRE = q + [w]
             if self.pre_to_word[tuple(PRE)] == 0:
                 for a in self.vocab:
-                    LOGPROB[a] = -math.inf
+                    if a != '<BOS>':
+                        LOGPROB[a] = -math.inf
             else:
                 for a in self.pre_to_word[tuple(PRE)]:
                     LOGPROB[a] = self.logprob[tuple([a, tuple(PRE)])]

@@ -34,6 +34,7 @@ class Ngram(object):
         count_n: collections.Counter = collections.Counter()
         total: int = 0
         self.pre_to_word = defaultdict(int)
+        self.logprob = [{} for i in range(self.N+1).__reversed__()]
 
         if self.N == 1 :
             self.START: Sequence[str] = None
@@ -51,7 +52,7 @@ class Ngram(object):
                     count[a] += 1
                     total += 1
         
-            self.logprob: Mapping[str, float] = {a: math.log(count[a]/total) if count[a] > 0 else -math.inf
+            self.logprob[0]: Mapping[str, float] = {a: math.log(count[a]/total) if count[a] > 0 else -math.inf
                                             for a in self.vocab}
         else:
             for line in data:
@@ -75,7 +76,6 @@ class Ngram(object):
                         count_sum[PRE_W] += 1 # count_sum[~ | w_1, ... , w_{t-1}] += 1
 
 
-            self.logprob = [{} for i in range(self.N+1).__reversed__()]
 
             for i in range(self.N-1):
                 if i == 0:
@@ -133,7 +133,7 @@ class Ngram(object):
         - pb: The log-probability distribution over the next token
         """
         if self.N == 1:
-            return (None, self.logprob)
+            return (None, self.logprob[0])
         elif self.N == 2:
             LOGPROB: Mapping[str, float] = {}
             PRE = [w]
@@ -143,7 +143,7 @@ class Ngram(object):
                     LOGPROB[a] = -math.inf
             else:
                 for a in self.pre_to_word[tuple(PRE)]:
-                    LOGPROB[a] = self.logprob[tuple([a, tuple(PRE)])]
+                    LOGPROB[a] = self.logprob[1][tuple([a, tuple(PRE)])]
 
             return (q, LOGPROB)
         else:
