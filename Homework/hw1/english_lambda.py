@@ -1,7 +1,7 @@
 
 # SYSTEM IMPORTS
 from collections.abc import Sequence
-import ngram_copy2 as ngram
+import ngram_copy as ngram
 import utils
 from typing import Tuple
 

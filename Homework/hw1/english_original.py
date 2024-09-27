@@ -4,22 +4,23 @@ from collections.abc import Sequence
 import ngram_original as ngram 
 import utils
 from typing import Tuple
+import data.charloader as charloader
 
 
 
-def train_ngram(N: int, train_path: str = "data/english/train") -> ngram.Ngram:
-    train_data: Sequence[Sequence[str]] = utils.read_mono(train_path)
+def train_ngram(N: int, train_path: str = "./hw1/data/english/train") -> ngram.Ngram:
+    train_data: Sequence[Sequence[str]] = charloader.load_chars_from_file(train_path)
     return ngram.Ngram(N, train_data)
 
-def dev_ngram(model: ngram.Ngram, dev_path: str = "data/english/dev") -> Tuple[int, int]: 
+def dev_ngram(model: ngram.Ngram, dev_path: str = "./hw1/data/english/dev") -> Tuple[int, int]: 
     num_correct: int = 0
     num_total: int = 0
-    dev_data: Sequence[Sequence[str]] = utils.read_mono(dev_path)
+    dev_data: Sequence[Sequence[str]] = charloader.load_chars_from_file(dev_path)
     LEN = len(dev_data)
-    l = 0
+    # l = 0
     for dev_line in dev_data:
-        l += 1
-        print(f"Processing line {l} of {LEN}")
+        # l += 1
+        # print(f"Processing line {l} of {LEN}")
         q = model.start()
 
         INPUT = dev_line[:-1]

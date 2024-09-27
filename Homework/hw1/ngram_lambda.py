@@ -4,7 +4,7 @@ from typing import Type, Tuple
 import collections
 import math
 from collections import defaultdict
-import data.charloader as charloader
+import numpy as np
 
 
 # PYTHON PROJECT IMPORTS
@@ -25,7 +25,7 @@ class Ngram(object):
     def __init__(self:NgramType,
                  N: int,
                  data: Sequence[Sequence[str]],
-                 d: int = 0.1) -> None:
+                 d: int = 1) -> None:
         self.N: int = N
         self.d: int = d
         self.vocab: utils.Vocab = utils.Vocab()
@@ -78,34 +78,58 @@ class Ngram(object):
                         count_n[LINE[i+self.N-1], PRE_W] += 1 # count_n[w_t | w_1, ... , w_{t-1}] += 1
                         count_sum[PRE_W] += 1 # count_sum[~ | w_1, ... , w_{t-1}] += 1
 
-            self.logprob[0] = {a: math.log(count[a]/self.total) if count[a] > 0 else -math.inf
+            self.vocab.remove('<BOS>')
+            N1 = 0
+            N2 = 0
+            for a in self.vocab:
+                if count[a] == 1:
+                    N1 += 1
+                elif count[a] == 2:
+                    N2 += 1
+            D = float(N1)/(N1 + 2*N2)
+            self.logprob[0] = {a: math.log( float(max(count[a]-D,0))/self.total + float(len(count)+D)/(self.total*len(count))) if count[a] > 0 else -math.inf
                                             for a in self.vocab}
             # print("logprob[0]:", self.logprob[0])
             
-            for i in range(self.N-1):
-                # LAMBDA = 1
-                print("i:", i)
+            for i in range(1,self.N-1):
+                
                 if i == 0: # bigram
                     for pre_words in self.pre_vocab[i+1]: # i+1 -> 1
-                        # SUM = sum([count_n[word, pre_words] for word in self.pre_to_word[pre_words]])
+                        SUM = sum([count_n[word, pre_words] for word in self.pre_to_word[pre_words]])
+                        D = 0.1 
+                        N1 = 0
+                        N2 = 0
+                        for word in self.pre_to_word[pre_words]:
+                            if count_n[word, pre_words] == 1:
+                                N1 += 1
+                            elif count_n[word, pre_words] == 2:
+                                N2 += 1
+                        D = float(N1)/(N1 + 2*N2)
                         # LAMBDA = SUM / (SUM + len(self.pre_to_word[pre_words]))
-                        LAMBDA = float(count_sum[pre_words]) / (count_sum[pre_words] + len(self.pre_to_word[pre_words]))
+
                         for word in self.vocab: # self.pre_to_word[pre_words] -> self.vocab
                             # print("self.logprob[0][word]:", self.logprob[0][word])
                             if self.logprob[0][word] == -math.inf:
                                 self.logprob[i+1][tuple([word, pre_words])] = -math.inf
                             else:
-                                self.logprob[i+1][tuple([word, pre_words])] = math.log(LAMBDA*count_n[word, pre_words]/count_sum[pre_words] + (1-LAMBDA)*math.exp(self.logprob[0][word]))
+                                # self.logprob[i+1][tuple([word, pre_words])] = math.log(LAMBDA*count_n[word, pre_words]/count_sum[pre_words] + (1-LAMBDA)*math.exp(self.logprob[0][word]))
                                 # self.logprob[i+1][tuple([word, pre_words])] = math.log(count_n[word, pre_words]/count_sum[pre_words])
+                                self.logprob[i+1][tuple([word, pre_words])] = math.log(float(max(count_n[word, pre_words]-D,0))/SUM + float(len(self.pre_to_word[pre_words])+D)*math.exp(self.logprob[0][word]/SUM))
 
                 else:
                     # if i >= 2:
                     for pre_words in self.pre_vocab[i+1]: # i+1 -> 1
                         # print("i+1:", i+1)
-                        # SUM = sum([count_n[word, pre_words] for word in self.pre_to_word[pre_words]])
-                        # LAMBDA = 0.5 # SUM / (SUM + len(self.pre_to_word[pre_words]))
-                        LAMBDA = float(count_sum[pre_words]) / (count_sum[pre_words] + len(self.pre_to_word[pre_words]))
-                        # X = pre_words[-2:]
+                        SUM = sum([count_n[word, pre_words] for word in self.pre_to_word[pre_words]])
+                        D = 0.1 
+                        N1 = 0
+                        N2 = 0
+                        for word in self.pre_to_word[pre_words]:
+                            if count_n[word, pre_words] == 1:
+                                N1 += 1
+                            elif count_n[word, pre_words] == 2:
+                                N2 += 1
+                        D = float(N1)/(N1 + 2*N2)
                         for word in self.vocab: # self.pre_to_word[pre_words] -> self.vocab    [pre_words[-1]]
                             # print("pre_words:", pre_words)
                             # print("pre_words[1:]:", pre_words[1:])
@@ -116,11 +140,11 @@ class Ngram(object):
                             # self.logprob[i+1][tuple([word, pre_words])] = math.log(A + C)
 
                             # self.logprob[i+1][tuple([word, pre_words])] = math.log((count_n[word, pre_words]+d)/count_sum[pre_words]+(len(self.pre_vocab[i+1]) + d) / count_sum[pre_words] * math.exp(self.logprob[i][tuple([word, pre_words[1:]])]) ) 
+                            
                             if self.logprob[0][word] == -math.inf:
                                 self.logprob[i+1][tuple([word, pre_words])] = -math.inf
                             else:
-                                self.logprob[i+1][tuple([word, pre_words])] = math.log(LAMBDA*count_n[word, pre_words]/count_sum[pre_words] + (1-LAMBDA)*math.exp(self.logprob[i][tuple([word, pre_words[1:]])]) )
-                    # else:
+                                self.logprob[i+1][tuple([word, pre_words])] = math.log(float(max(count_n[word, pre_words]-D,0))/SUM + float(len(self.pre_to_word[pre_words])+D)*math.exp(self.logprob[i][tuple([word, pre_words[1:]])]/SUM))
                     #     for pre_words in self.pre_vocab[i+1]:
                     #         for word in self.pre_to_word[pre_words]:
                     #             self.logprob[i+1][tuple([word, pre_words])] = math.log(count_n[word, pre_words]/count_sum[pre_words])
@@ -169,7 +193,7 @@ class Ngram(object):
                 for a in self.vocab:
                     LOGPROB[a] = -math.inf
             else:
-                for a in self.pre_to_word[tuple(PRE)]:
+                for a in self.vocab: # self.pre_to_word[tuple(PRE)] -> self.vocab
                     LOGPROB[a] = self.logprob[1][tuple([a, tuple(PRE)])]
 
             return (q, LOGPROB)
@@ -180,50 +204,12 @@ class Ngram(object):
                 for a in self.vocab:
                     LOGPROB[a] = -math.inf
             else:
-                for a in self.pre_to_word[tuple(PRE)]:
+                for a in self.vocab: # self.pre_to_word[tuple(PRE)] -> self.vocab
                     LOGPROB[a] = self.logprob[self.N-1][tuple([a, tuple(PRE)])]
 
             q = q[1:] + [w]
 
         return (q, LOGPROB)
-    
-def main() -> None:
-    train_data: Sequence[Sequence[str]] = charloader.load_chars_from_file("./hw1/data/english/train")
-    MODEL = Ngram(5, train_data)
-    
-    num_correct: int = 0
-    num_total: int = 0
-    dev_data: Sequence[Sequence[str]] = charloader.load_chars_from_file("./hw1/data/english/dev")
-
-    LEN = len(dev_data)
-    #l = 0
-    for dev_line in dev_data:
-        #l += 1
-        # print(f"Processing line {l} of {LEN}")
-        q = MODEL.start()
-
-        INPUT = dev_line[:-1]
-        OUTPUT = dev_line[1:]
-        # print("INPUT_LINE:", INPUT)
-        # print("OUTPUT_LINE:", OUTPUT)
-
-        for c_input, c_actual in zip(INPUT, OUTPUT):
-            # print("c_input:", c_input)
-            # print("q:", q)
-            q, p = MODEL.step(q, c_input)
-
-            c_predicted = max(p.keys(), key=lambda k: p[k])
-            if c_predicted == c_actual:
-                num_correct += 1
-            num_total += 1
-    print(num_correct / num_total)
-
-if __name__ == "__main__":
-    main()
-        
-
 
         
    
-
-    
