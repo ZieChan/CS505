@@ -36,7 +36,7 @@ def dev_model(predictor: charpredictor.CharPredictor, dev_path: str = "data/mand
                 num_correct += 1
             num_total += 1
             q = han
-    num_correct = max(int(num_total*0.90), num_correct)
+    # num_correct = max(int(num_total*0.90), num_correct)
 
     return num_correct, num_total
             
@@ -72,6 +72,7 @@ def test_model(predictor: charpredictor.CharPredictor, test_path: str = "data/ma
 def main() -> None:
     model = train_model()
     num_correct, num_total = test_model(model)
+    print(f"num_correct: {num_correct}, num_total: {num_total}")
     print(f"Accuracy: {num_correct / num_total}")
 
 if __name__ == "__main__":

@@ -38,7 +38,7 @@ def dev_ngram(model: ngram.Ngram, dev_path: str = "./data/english/dev") -> Tuple
 
             num_correct += int(c_predicted == c_actual)
             num_total += 1
-    num_correct += int(num_correct/10)
+    # num_correct += int(num_correct/10)
 
     return num_correct, num_total
 
@@ -68,14 +68,15 @@ def test_ngram(model: ngram.Ngram, test_path: str = "./data/english/test") -> Tu
 
             num_correct += int(c_predicted == c_actual)
             num_total += 1
-    num_correct += int(num_correct/10)
+    # num_correct += int(num_correct/10)
 
     return num_correct, num_total
 
 def main() -> None:
     MODEL = train_ngram()
     num_correct, num_total = test_ngram(MODEL)
-    print(num_correct / num_total)
+    print(f"num_correct: {num_correct}, num_total: {num_total}")
+    print("accuracy:", num_correct / num_total)
 
 if __name__ == "__main__":
     main()
