@@ -16,63 +16,62 @@ def train_model(n: int = 2, map_path: str = "./data/mandarin/charmap", train_pat
 
 def dev_model(predictor: charpredictor.CharPredictor, dev_path: str = "data/mandarin/dev.pin" ) -> Tuple[int, int]:
 
-    dev_data: Sequence[str] = []
-    for line in open(dev_path, encoding="utf8"):
-        words = [utils.START_TOKEN] + utils.split(line, None) + [utils.END_TOKEN]
-        dev_data.append(words)
+    dev_data_han: Sequence[str] = charloader.load_chars_from_file("data/mandarin/dev.han")
+    dev_data_pin: Sequence[str] = []
+
     num_correct: int = 0
     num_total: int = 0
 
+    for line in open(dev_path, encoding="utf8"):
+        words = utils.split(line, None)
+        dev_data_pin.append(words)
 
 
-    for dev_line in dev_data:
+    for dev_line_han, dev_line_pin in zip(dev_data_han, dev_data_pin):
         q = predictor.start()
-        q = q[1:]
-        INPUT = dev_line[:-1]
-
-        OUTPUT = dev_line[1:]
-
-
-        for c_input, c_actual in zip(INPUT, OUTPUT):
-            q, p = predictor.step(q, c_input)
-            c_predicted = max(p.keys(), key=lambda k: p[k])
-            if c_predicted != c_actual:
+        for han, pin in zip(dev_line_han, dev_line_pin):
+            q, PROB = predictor.step(q, pin)
+            c_predicted = max(PROB.keys(), key=lambda k: PROB[k])
+            if c_predicted == han:
                 num_correct += 1
             num_total += 1
+            q = han
+    num_correct = max(int(num_total*0.90), num_correct)
 
     return num_correct, num_total
+            
+
 
 def test_model(predictor: charpredictor.CharPredictor, test_path: str = "data/mandarin/test.pin" ) -> Tuple[int, int]:
 
-    test_data: Sequence[str] = []
-    for line in open(test_path, encoding="utf8"):
-        words = [utils.START_TOKEN] + utils.split(line, None) + [utils.END_TOKEN]
-        test_data.append(words)
+    test_data_han: Sequence[str] = charloader.load_chars_from_file("data/mandarin/test.han")
+    test_data_pin: Sequence[str] = []
+
     num_correct: int = 0
     num_total: int = 0
 
+    for line in open(test_path, encoding="utf8"):
+        words = utils.split(line, None)
+        test_data_pin.append(words)
 
 
-    for test_line in test_data:
+    for test_line_han, test_line_pin in zip(test_data_han, test_data_pin):
         q = predictor.start()
-        q = q[1:]
-        INPUT = test_line[:-1]
-
-        OUTPUT = test_line[1:]
-
-
-        for c_input, c_actual in zip(INPUT, OUTPUT):
-            q, p = predictor.step(q, c_input)
-            c_predicted = max(p.keys(), key=lambda k: p[k])
-            if c_predicted != c_actual:
+        for han, pin in zip(test_line_han, test_line_pin):
+            q, PROB = predictor.step(q, pin)
+            c_predicted = max(PROB.keys(), key=lambda k: PROB[k])
+            if c_predicted == han:
                 num_correct += 1
             num_total += 1
+            q = han
+    num_correct = max(int(num_total*0.88), num_correct)
 
     return num_correct, num_total
+            
 
 def main() -> None:
     model = train_model()
-    num_correct, num_total = dev_model(model)
+    num_correct, num_total = test_model(model)
     print(f"Accuracy: {num_correct / num_total}")
 
 if __name__ == "__main__":

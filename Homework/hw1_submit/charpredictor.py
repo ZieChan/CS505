@@ -1,12 +1,14 @@
 from collections.abc import Sequence, Mapping
 from typing import Tuple
+from collections import defaultdict
 
 import data.charloader as charloader
-import data.mandarin as mandarin
+import data.mandarin 
 
 import ngram
 import english
 import utils
+import math
 
 class CharPredictor(object):
       """A Ngram language model.
@@ -23,96 +25,119 @@ class CharPredictor(object):
             self.map_char_to_pron: Mapping[str, str] = {}
             self.map_pron_to_char: Mapping[str, str] = {}
             self.train_data: Sequence[str]
+            self.pre_to_word = defaultdict(int)
 
             with open(map_path, "r", encoding="utf8") as f:
                   for line in f:
                         char, pron = line.split()
                         self.map_char_to_pron[char] = pron
-                        self.map_pron_to_char[pron] = char
+                        if pron not in self.map_pron_to_char:
+                              self.map_pron_to_char[pron] = [char]
+                        else:
+                              self.map_pron_to_char[pron].append(char)
 
             
             # self.train_data = mandarin.load_and_unmask_chars(self.map_char_to_pron, train_path)
             
-            raw_data: Sequence[str] = charloader.load_chars_from_file(train_path)
-            # print(raw_data[0])
-            unmasked_chars: Sequence[str] = list()
-            for line in raw_data:
-                  unmasked_line: Sequence[str] = list()
-                  # split_line: Sequence[str] = line.split()
-                  for i, token in enumerate(line):
-                        # print("i: %s, len(split_line): %s" % (i, len(split_line)))
-                        if token in self.map_char_to_pron:
-                              unmasked_line.append(self.map_char_to_pron[token])
-                        else:
-                              if token == " ":
-                                    unmasked_line.append("<space>")
-                              else:
-                                    unmasked_line.append(token)
-                        # if i < len(line) - 1:
-                        #       unmasked_line.append("<space>")
-                  unmasked_chars.append(unmasked_line)
-            self.train_data = unmasked_chars
-            # print(self.train_data[:5])
+            self.train_data: Sequence[str] = charloader.load_chars_from_file(train_path)
 
-            # for i in range(len(self.train_data)):
-            #       self.train_data[i] = ['<BOS>'] + self.train_data[i] + ['<EOS>']
-            # print(self.train_data[0])
+            for line in self.train_data:
+                  for word, i in zip(line, range(len(line)-1)):
+                        if word not in self.pre_to_word:
+                              self.pre_to_word[word] = [line[i+1]]
+                        else:
+                              self.pre_to_word[word].append(line[i+1])
 
 
 
             self.model = ngram.Ngram(self.n, self.train_data)
 
       def candidates(self, token: str) -> Sequence[str]:
-            (q, p) = self.model.step(self.model.start(), token)
             cand = []
-            for k in p.keys():
-                  cand = cand + [k]
+            if token == '<EOS>':
+                  return []
+            elif token == '<UNK>':
+                  return []
+            elif token == '<BOS>':
+                  return []
+            elif token == '<space>':
+                  return ' '
+                  # for k in self.model.vocab:
+                  #       cand = cand + [k]
+           
+            for char, pron in self.map_char_to_pron.items():
+                  if pron == token:
+                        # print(f"char: {char}, pron: {pron}")
+                        cand = cand + [char]
+                        # print(cand)
+            if len(token) == 1:
+                  cand = cand + [token]
             return cand
+            # return cand
             # return [pron for pron in self.model.step(self.model.start(), token)[1].keys()]
 
       def start(self) -> Sequence[str]:
             return self.model.start()
       
       def step(self, q: Sequence[str], w: str) -> Tuple[Sequence[str], Mapping[str, float]]:
-            return self.model.step(q, w)
+            CANDIDATES = self.candidates(w)
+            _, ALLPROB = self.model.step(None, q)
+            FINALPROB = {}
+            for c in CANDIDATES:
+                if c not in self.model.vocab:
+                    FINALPROB[c] = 0
+                elif c in ALLPROB:
+                    if ALLPROB[c] == -math.inf:
+                        FINALPROB[c] = 0
+                    else:
+                        FINALPROB[c] = math.exp(ALLPROB[c])
+                else:   
+                    FINALPROB[c] = math.exp(self.model.uni_logprob(c))                
+            SUM = sum(FINALPROB.values())
+            for c in CANDIDATES:
+                if FINALPROB[c] == 0:
+                    FINALPROB[c] = -math.inf
+                else:
+                    FINALPROB[c] = math.log(FINALPROB[c] / SUM)
+
+                  
+
+            return (CANDIDATES, FINALPROB)
       
       # def data10(self) -> None:
       #       for i in range(10):
       #             print(self.train_data[i])
       
-def main() -> None:
-      predictor = CharPredictor(n=5)
-      dev_data: Sequence[str] = []
-      for line in open("./data/mandarin/dev.pin", encoding="utf8"):
-            words = [utils.START_TOKEN] + utils.split(line, None) + [utils.END_TOKEN]
-            dev_data.append(words)
+# def main() -> None:
+#       predictor = CharPredictor(n=2)
+#       dev_data: Sequence[str] = charloader.load_chars_from_file("./data/mandarin/train.han")
 
-      num_correct: int = 0
-      num_total: int = 0
+#       num_correct: int = 0
+#       num_total: int = 0
 
 
 
-      for dev_line in dev_data:
-            q = predictor.start()
-            q = q[1:]
-            INPUT = dev_line[:-1]
+#       for dev_line in dev_data:
+#             q = predictor.start()
+#             q = q[1:]
+#             INPUT = dev_line[:-1]
 
-            OUTPUT = dev_line[1:]
+#             OUTPUT = dev_line[1:]
 
 
-            for c_input, c_actual in zip(INPUT, OUTPUT):
-                  q, p = predictor.step(q, c_input)
-                  c_predicted = max(p.keys(), key=lambda k: p[k])
-                  if c_predicted == c_actual:
-                        num_correct += 1
-                  num_total += 1
-      print(num_correct / num_total)
+#             for c_input, c_actual in zip(INPUT, OUTPUT):
+#                   q, p = predictor.model.step(q, c_input)
+#                   c_predicted = max(p.keys(), key=lambda k: p[k])
+#                   if c_predicted == c_actual:
+#                         num_correct += 1
+#                   num_total += 1
 
+#       print(num_correct / num_total)
 
 
       
-if __name__ == "__main__":
-      main()
+# if __name__ == "__main__":
+#       main()
 
 
             

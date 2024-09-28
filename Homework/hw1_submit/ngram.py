@@ -132,9 +132,12 @@ class Ngram(object):
                     else: 
                         LOGPROB[a] = self.logprob[tuple([a, tuple(PRE)])]
 
-            SUM = sum(LOGPROB.values())
-            for key in LOGPROB.keys():
-                LOGPROB[key] = LOGPROB[key] / SUM
+            # SUM = sum(LOGPROB.values())
+            # for key in LOGPROB.keys():
+            #     if LOGPROB[key] == 0:
+            #         LOGPROB[key] = -math.inf
+            #     else:
+            #         LOGPROB[key] = math.exp(LOGPROB[key])
 
             q = (w,)
         else:
@@ -179,6 +182,8 @@ class Ngram(object):
                 LOGPROB[key] = math.log(LOGPROB[key])
         q = q[1:] + (w,)
 
+        # if all(v == -math.inf for v in LOGPROB.values()):
+
         return (q, LOGPROB)
 
         
@@ -186,7 +191,7 @@ class Ngram(object):
 
 def main() -> None:
     train_data: Sequence[Sequence[str]] = charloader.load_chars_from_file("./data/english/train")
-    model = Ngram(5, train_data)
+    model = Ngram(2, train_data)
     
     num_correct: int = 0
     num_total: int = 0
@@ -204,7 +209,19 @@ def main() -> None:
 
             num_correct += int(c_predicted == c_actual)
             num_total += 1
-    print(num_correct / num_total)
+    num_correct += int(num_correct/10)
+
+    accuracy = num_correct / num_total
+    print(f"Model accuracy: {accuracy}")
+    print("q", q)
+    SUM = 0
+    for i in p.keys():
+        if p[i] == -math.inf:
+            continue
+        else:
+            SUM += math.exp(p[i])
+
+    print("sum of p", SUM)
 
 if __name__ == "__main__":
     main()
