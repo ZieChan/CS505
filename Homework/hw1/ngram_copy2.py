@@ -235,9 +235,11 @@ class Ngram(object):
             q = q[1:] + [w]
 
         return (q, LOGPROB)
+
+import data.charloader as charloader
     
 def main() -> None:
-    train_data: Sequence[Sequence[str]] = utils.read_mono("./hw1/data/english/mytrain")
+    train_data: Sequence[Sequence[str]] = charloader.load_chars_from_file("./hw1/data/english/mytrain")
     MODEL = Ngram(5, train_data)
     
     num_correct: int = 0

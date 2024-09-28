@@ -4,6 +4,7 @@ from typing import Type, Tuple
 import collections
 import math
 from collections import defaultdict
+import data.charloader as charloader
 
 
 # PYTHON PROJECT IMPORTS
@@ -24,9 +25,9 @@ class Ngram(object):
     def __init__(self:NgramType,
                  N: int,
                  data: Sequence[Sequence[str]],
-                 d: int = 0.1) -> None:
+                 d: float = 0.4) -> None:
         self.N: int = N
-        self.d: int = d
+        self.d: float = d
         self.vocab: utils.Vocab = utils.Vocab()
         # self.pre_vocab: utils.Vocab = utils.Vocab()
         self.pre_vocab = [set() for _ in range(self.N+1)]
@@ -101,44 +102,44 @@ class Ngram(object):
             
             for i in range(self.N-1):
                 
-                print("i:", i)
+                # print("i:", i)
                 if i == 0:
                     for pre_words in self.pre_vocab[i+1]:
-                        SU = 0
-                        N1 = len(self.pre_to_word[pre_words])
+                        # SU = 0
+                        # N1 = len(self.pre_to_word[pre_words])
                         for word in self.pre_to_word[pre_words]:
                             A = (max(float(count_n[word, pre_words]) - d, 0) ) / count_sum[pre_words]
                             B = self.logprob[i][word]
                             C = (N1 + d) / count_sum[pre_words] * B
                             self.logprob[i+1][tuple([word, pre_words])] = A + C
-                            SU += (A + C)
-                        if SU > 2:
-                            for word in self.pre_to_word[pre_words]:
-                                A = (max(float(count_n[word, pre_words]) - d, 0) ) / count_sum[pre_words]
-                                B = self.logprob[i][word]
-                                C = (N1 + d) / count_sum[pre_words] * B
-                                self.logprob[i+1][tuple([word, pre_words])] = A + C
-                                SU += (A + C)
+                        #     SU += (A + C)
+                        # if SU > 2:
+                        #     for word in self.pre_to_word[pre_words]:
+                        #         A = (max(float(count_n[word, pre_words]) - d, 0) ) / count_sum[pre_words]
+                        #         B = self.logprob[i][word]
+                        #         C = (N1 + d) / count_sum[pre_words] * B
+                        #         self.logprob[i+1][tuple([word, pre_words])] = A + C
+                                # SU += (A + C)
                                 
-                                print("d:", d)
-                                print("word:", word)
-                                print("pre_words:", pre_words)
-                                print("count_n[word, pre_words]:", count_n[word, pre_words])
-                                print("count_sum[pre_words]:", count_sum[pre_words])
-                                print("A:", A)
-                                print("B:", B)
-                                print("C:", C)
-                                print("logprob[i-1][tuple([word, pre_words])]:", self.logprob[i][word])
-                                print()
+                                # print("d:", d)
+                                # print("word:", word)
+                                # print("pre_words:", pre_words)
+                                # print("count_n[word, pre_words]:", count_n[word, pre_words])
+                                # print("count_sum[pre_words]:", count_sum[pre_words])
+                                # print("A:", A)
+                                # print("B:", B)
+                                # print("C:", C)
+                                # print("logprob[i-1][tuple([word, pre_words])]:", self.logprob[i][word])
+                                # print()
                             
-                                print("SU in i:", SU)
-                            # self.logprob[i+1][tuple([word, pre_words])] = math.log(count_n[word, pre_words]/count_sum[pre_words])
+                                # print("SU in i:", SU)
+                            # self.logprob[i+1][tuple([word, pre_words])] = float(count_n[word, pre_words])/count_sum[pre_words]
 
                 else:
                     for pre_words in self.pre_vocab[i+1]:
                         N1 = len(self.pre_to_word[pre_words])
                         # print("i+1:", i+1)
-                        SU = 0
+                        # SU = 0
                         for word in self.pre_to_word[pre_words]:
                             # print("pre_words:", pre_words)
                             # print("pre_words[1:]:", pre_words[1:])
@@ -147,9 +148,9 @@ class Ngram(object):
                             B = self.logprob[i][tuple([word, pre_words[1:]])]
                             C = (N1 + d) / count_sum[pre_words] * B
                             self.logprob[i+1][tuple([word, pre_words])] = A + C
-                            SU += (A + C)
-                        if SU > 1.1:
-                            print("SU in i:", SU)
+                        #     SU += (A + C)
+                        # if SU > 1.1:
+                        #     print("SU in i:", SU)
                             
                     # print("SU in i:", SU)
 
@@ -217,20 +218,44 @@ class Ngram(object):
             q = q[1:] + [w]
 
         return (q, LOGPROB)
-    
+
+import numpy as np
+
 def main() -> None:
-    train_data: Sequence[Sequence[str]] = utils.read_mono("./hw1/data/english/train")
-    MODEL = Ngram(5, train_data)
+    train_data: Sequence[Sequence[str]] = charloader.load_chars_from_file("./data/english/train")
+    MODEL = Ngram(8, train_data, 0.15)
     
     num_correct: int = 0
     num_total: int = 0
-    dev_data: Sequence[Sequence[str]] = utils.read_mono("./hw1/data/english/dev")
+    dev_data: Sequence[Sequence[str]] = charloader.load_chars_from_file("./data/english/dev")
 
-    LEN = len(dev_data)
-    l = 0
+    # LEN = len(dev_data)
+    # l = 0
+
+    # for d in np.arange(0.15, 1.1, 0.1):
+    #     MODEL = Ngram(8, train_data, d)
+    #     for dev_line in dev_data:
+    #         # l += 1
+    #         # print(f"Processing line {l} of {LEN}")
+    #         q = MODEL.start()
+
+    #         INPUT = dev_line[:-1]
+    #         OUTPUT = dev_line[1:]
+    #         # print("INPUT_LINE:", INPUT)
+    #         # print("OUTPUT_LINE:", OUTPUT)
+
+    #         for c_input, c_actual in zip(INPUT, OUTPUT):
+    #             q, p = MODEL.step(q, c_input)
+
+    #             c_predicted = max(p.keys(), key=lambda k: p[k])
+    #             if c_predicted == c_actual:
+    #                 num_correct += 1
+    #             num_total += 1
+    #     print("d =", d, ":", num_correct / num_total)
+
     for dev_line in dev_data:
-        l += 1
-        print(f"Processing line {l} of {LEN}")
+        # l += 1
+        # print(f"Processing line {l} of {LEN}")
         q = MODEL.start()
 
         INPUT = dev_line[:-1]

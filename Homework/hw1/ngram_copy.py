@@ -25,7 +25,7 @@ class Ngram(object):
     def __init__(self:NgramType,
                  N: int,
                  data: Sequence[Sequence[str]],
-                 d: int = 0.1) -> None:
+                 d: int = 0.3) -> None:
         self.N: int = N
         self.d: int = d
         self.vocab: utils.Vocab = utils.Vocab()

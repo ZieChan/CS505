@@ -1,0 +1,27 @@
+i wanted to update to 12.04 and after this i reboot the system choose the new kernel
+ok 1 sec
+bekks, was, he said he is not running that kernel
+Mulder911  type ps -e|less <-- which has number 88 ?
+XiaolinDraconis, Is that what is on the usb, you want it clean to start with, no hidden trash with stuff in it either.
+pepee: Then how can we investigate what is causing that error...?
+I suppose it means, the PID will not necessarily be the same
+bekks, reading the logs, it should say what process was this
+wilee-nilee, no thats my home directory, but its not the problem as mini.iso loads just fine, i think its not mounting cause its on another partition that is mounted as well
+bekks, at least that's what a bit of googling shows
+on this kernel i don`t see pid88
+google  "/proc/*/oom_adj is deprecated, please use /proc/*/oom_score_adj"
+XiaolinDraconis, Drag it to your desktop and mount it there.
+Mulder911, in a terminal, type:   grep -n "oom_adj is deprecated" /var/log/*
+wilee-nilee, that was my thoughts as well
+/var/log/kern.log:751:Oct 31 00:46:10 bt kernel: [    1.631658] udevd (92): /proc/92/oom_adj is deprecated, please use /proc/92/oom_score_adj instead.
+wilee-nilee, that failed as well
+XiaolinDraconis, I always reformat the usb as well each time to be sure it is clean, if I do a load this way.
+wilee-nilee, the usb is freshly formatted
+XiaolinDraconis, So what is the actual failure?
+Mulder911: So which process is PID 92?
+wilee-nilee, the iso wont mount
+wilee-nilee, opening it with archive manager and can see the contents from there
+Mulder911, in the terminal, type:   grep -n "Linux version" /var/log/kern.log
+bekks, PID 92
+XiaolinDraconis, Not even with a right click on it then clicking on open with archive mounter
+bekks, PID 92 is udevd

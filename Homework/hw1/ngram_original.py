@@ -39,7 +39,7 @@ class Ngram(object):
             self.START: Sequence[str] = None
         else:
             self.START: Sequence[str] = []
-            for i in range(self.N-2):
+            for i in range(self.N-1):
                 self.START.append('<BOS>')
         
 
@@ -55,7 +55,7 @@ class Ngram(object):
                                             for a in self.vocab}
         else:
             for line in data:
-                LINE = self.START +  list(line) + [utils.END_TOKEN]
+                LINE = self.START[1:] +  list(line) + [utils.END_TOKEN]
 
                 # print("LINE:", LINE)
 
@@ -112,10 +112,10 @@ class Ngram(object):
         """Return the language model's start state. (A unigram model doesn't
         have state, so it's just `None`."""
         ST = self.START
-        if self.N == 1 or self.N == 2:
+        if self.N == 1 :
             return None
         else:
-            return ST       
+            return ST[1:]       
 
 
     def step(self: NgramType,
