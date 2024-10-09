@@ -121,6 +121,10 @@ class IBM1(object):
                  Your code should return a mapping key'd by the (input-vocab-element, output-vocab-element) pair
                  and should contain the value of the soft counts for each pair in the model.
         """
+        self._init_tm(f_corpus, e_corpus)
+
+        
+        
         return None
 
     def mstep(self: IBM1Type,
