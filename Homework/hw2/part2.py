@@ -22,7 +22,8 @@ from eval.bleu import bleu
 
 def parta(mandarin_corpus: Sequence[Sequence[str]],
           english_corpus: Sequence[Sequence[str]],
-          test_corpus: Sequence[Sequence[str]]
+          test_corpus: Sequence[Sequence[str]],
+          lm_n: int = 3, tm_max_iter: int = 100, num_rules_to_keep: int = 70
           ) -> Translator:
 
     # need to compute the unique set of tokens in test_corpus
@@ -39,7 +40,8 @@ def parta(mandarin_corpus: Sequence[Sequence[str]],
     return Translator().train_from_raw(mandarin_corpus,
                                        english_corpus,
                                        unknown_fs=unique_test_token_set,
-                                       converge_threshold=error)
+                                       converge_threshold=error,
+                                       lm_n=lm_n, tm_max_iter=tm_max_iter, num_rules_to_keep=num_rules_to_keep)
 
 
 def partb(m: Translator,
@@ -78,7 +80,8 @@ if __name__ == "__main__":
     mandarin_corpus, english_corpus = load_aligned_data(train_path)
     test_corpus = load_unaligned_data(test_path)
 
-    m = parta(mandarin_corpus, english_corpus, test_corpus)
+    m = parta(mandarin_corpus, english_corpus, test_corpus, lm_n=3, tm_max_iter=100,
+                          num_rules_to_keep=70)
 
-    partb(m, test_corpus, translation_out, gold_path)
+    BLEU = partb(m, test_corpus, translation_out, gold_path)
 

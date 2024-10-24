@@ -86,9 +86,13 @@ def partc(m: IBM1,
              of the paths matters) to calculate your performance metrics on your alignments. Please return the
              mapping produced by 'align_f1'
     """
-
     print("part1.partc: TODO complete me!")
-    return None
+    aligments = m.predict(mandarin_corpus, english_corpus)
+    with open(out_path, "w") as f:
+        for seq in aligments:
+            f.write(" ".join([f"{j}-{i}" for j, i in seq]) + "\n")
+    
+    return align_f1(out_path, gold_path)
 
 if __name__ == "__main__":
     cd = os.path.abspath(os.path.dirname(__file__))

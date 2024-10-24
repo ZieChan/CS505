@@ -171,6 +171,7 @@ class Translator(object):
 
         # train the model
         return self.train_from_raw(f_corpus, e_corpus,
+                                   lm_n=lm_n,
                                    tm_max_iter=tm_max_iter,
                                    num_rules_to_keep=num_rules_to_keep,
                                    default_unk_prob=default_unk_prob,
@@ -190,6 +191,7 @@ class Translator(object):
                        ) -> TranslatorType:
         self._train(f_corpus,
                     e_corpus,
+                    lm_n=lm_n,
                     tm_max_iter=tm_max_iter,
                     num_rules_to_keep=num_rules_to_keep,
                     default_unk_prob=default_unk_prob,
@@ -245,8 +247,48 @@ class Translator(object):
                         - be warned! state[1] could be an empty tuple (a result of the smoothing in KneserNey)
         """
         state_topological_order: Sequence[StateType] = fst_topsort(fst)
+        viterbi = collections.defaultdict(lambda: -np.inf)
+        states = {state: None for state in state_topological_order}
+        viterbi[fst.start] = 0
+        current_log_prob = -np.inf
 
-        return None, None, None
+        for state in state_topological_order:
+            if state == fst.start:
+                continue
+            if state in fst.transitions_to:
+                for transition, wt in fst.transitions_to[state].items():
+                    if wt > 0:
+                        current_log_prob = np.log(wt)
+                        if viterbi[transition.q] + current_log_prob > viterbi[state]:
+                            viterbi[state] = viterbi[transition.q] + current_log_prob
+                            states[state] = (transition.q, transition)
+
+        current_state = fst.accept
+        best_path = []
+        best_transitions = []
+        previous_state: StateType = None
+        while True:
+            if current_state == fst.start:
+                break
+            elif len(current_state[1]) > 0 and START_TOKEN in current_state[1][-1]:
+                break
+            best_path.append(current_state)
+            if current_state not in states:
+                break
+            previous_state, transition = states[current_state]
+            best_transitions.append(transition)
+            current_state = previous_state
+
+                
+        best_path.append(fst.start)
+        best_path.reverse()
+        best_transitions.reverse()
+        return best_path, viterbi[fst.accept], best_transitions
+
+                
+        
+
+        # return None, None, None
 
     def compose(self: TranslatorType,
                 *list_of_fsts: Sequence[FST]

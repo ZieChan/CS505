@@ -121,11 +121,22 @@ class IBM1(object):
                  Your code should return a mapping key'd by the (input-vocab-element, output-vocab-element) pair
                  and should contain the value of the soft counts for each pair in the model.
         """
-        self._init_tm(f_corpus, e_corpus)
 
-        
-        
-        return None
+        counts: Mapping[Tuple[str, str], float] = {}
+        SUM: Mapping[str, float] = {}
+        for f_seq, e_seq in zip(f_corpus, e_corpus):
+            for f in f_seq:
+                SUM[f] = 0
+                for e in e_seq:
+                    t = Transition(self.tm.start, tuple([e, f]), self.tm.start)
+                    SUM[f] += self.tm.transitions_from[self.tm.start][t]
+                for e in e_seq:
+                    t = Transition(self.tm.start, tuple([e, f]), self.tm.start)
+                    if t.a not in counts:
+                        counts[t.a] = (self.tm.transitions_from[self.tm.start][t] / SUM[f])
+                    else:
+                        counts[t.a] += (self.tm.transitions_from[self.tm.start][t] / SUM[f])
+        return counts
 
     def mstep(self: IBM1Type,
               counts: Mapping[Tuple[str, str], float]
@@ -134,7 +145,30 @@ class IBM1(object):
                  the transitions in self.tm. Be sure once you're done reweighting transitions, that you
                  call self.tm.normalize_cond() so that the FST code will normalize all of the pmfs for you!
         """
-        return
+        # for q in self.tm.input_alphabet:
+        #     # print(q)
+        #     SUM = 0
+        #     for t in self.tm.transitions_on[q].keys():
+        #         # print(t.a)
+        #         SUM += counts[t.a]
+        #     for t in self.tm.transitions_on[q].keys():
+        #         if SUM == 0:
+        #             self.tm.reweight_transition(t, 0)
+        #             continue
+        #         self.tm.reweight_transition(t, counts[t.a] / SUM)
+        # self.tm.normalize_cond()
+        # print("counts[('NULL', '-')] = ", counts[tuple([NULL_WORD, "-"])])
+        for q in self.tm.input_alphabet:
+            SUM = 0
+            for t in self.tm.transitions_on[q].keys():
+                SUM += counts[t.a]
+            for t in self.tm.transitions_on[q].keys():
+                if SUM == 0:
+                    self.tm.reweight_transition(t, 0)
+                    continue
+                self.tm.reweight_transition(t, counts[t.a] / SUM)
+        self.tm.normalize_cond()
+        return None
 
     def _train(self: IBM1Type,
                f_corpus: Sequence[Sequence[str]],
