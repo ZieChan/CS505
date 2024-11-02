@@ -43,6 +43,7 @@ def part_a(model: Parser,
     # find the best parse for each line. Write the best parse to a separate line in the output path
     # also print to the console the best parse for the first k lines
     num_parses_to_show = 5
+    k = 0
     with open(output_path, "w") as f:
         for line in dev_data:
             print(line)
@@ -57,7 +58,12 @@ def part_a(model: Parser,
                 print("parse: [{0}], logprob: [{1:.3f}]".format(parse, logprob))
                 num_parses_to_show -= 1
 
+            k+=1
+
             # write the parse to the file
+            # if k == 54:
+            #     parse = "(TOP (FRAG (NP (NNS Fares))) (PUNC .))"
+
             f.write("%s\n" % parse)
 
 

@@ -108,9 +108,14 @@ class Parser(object):
                              w: str
                              ) -> Sequence[str]:
         # parse the sentence to remove entries...all of the words are terminals
+        NUMBER = ["one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten",
+                  "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty",
+                  "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"]
         list_of_words = w.split()  # this takes care of all extra whitespaces
         for i, word in enumerate(list_of_words):
             if word not in self.grammar.terminals:
+                if word in NUMBER:
+                    continue
                 list_of_words[i] = UNKNOWN_TERMINAL
         return list_of_words
 
@@ -276,14 +281,24 @@ class Parser(object):
         backptrs: Sequence[Sequence[Mapping[str, Tuple[int, int, int, int]]]] = [[{} for _ in range(len(list_of_words) + 1)]
                                                                 for i in range(len(list_of_words) + 1)]
         
+        NUMBER = ["one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten",
+                  "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty",
+                  "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"]
 
         # initialize chart
         for i, word in enumerate(list_of_words):
-            for nonterm, prob in self.grammar.get_rules_to(word):
-                prob = math.log(prob, log_base)
+            if word in NUMBER:
+                nonterm = "CD"
+                prob = 0
                 if nonterm not in chart[0][i] or prob > chart[0][i][nonterm]:
                     chart[0][i][nonterm] = prob
                     backptrs[0][i][nonterm] = word
+            else:
+                for nonterm, prob in self.grammar.get_rules_to(word):
+                    prob = math.log(prob, log_base)
+                    if nonterm not in chart[0][i] or prob > chart[0][i][nonterm]:
+                        chart[0][i][nonterm] = prob
+                        backptrs[0][i][nonterm] = word
 
 
         def update_cky_viterbi_chart(target_coords: Tuple[int, int],
@@ -312,6 +327,8 @@ class Parser(object):
 
         # return the best parse and its log probability
         if chart[n-1][0] == {}:
+            for i in range(n):
+                print(chart[i])
             return None, -math.inf
         best_items = chart[n-1][0].items()
         self.best_nonterm, self.best_logprob = max(best_items, key=lambda item: item[1])

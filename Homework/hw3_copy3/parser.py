@@ -129,9 +129,13 @@ class Parser(object):
         else:
             l_child_symb, l_row, l_col, r_child_symb, r_row, r_col = backptrs[cur_row][cur_col][cur_symb]
             left_child = self._traverse_backptrs_dfs(backptrs, l_row, l_col, l_child_symb)
-            right_child = self._traverse_backptrs_dfs(backptrs, r_row, r_col, r_child_symb)
+            if r_child_symb is not None:
+                right_child = self._traverse_backptrs_dfs(backptrs, r_row, r_col, r_child_symb)
+
             node.append_child(left_child)
-            node.append_child(right_child)
+            
+            if r_child_symb is not None:
+                node.append_child(right_child)
             return node
 
 
@@ -207,6 +211,8 @@ class Parser(object):
         # split the sentence into tokens
         list_of_words: Sequence[str] = self._preprocess_sentence(w)
 
+        
+
         # Since we have a cky_traversal algorithm, the vanilla cky algorithm can be implemented as calling
         # the traversal with a specific function pointer that updates a chart. You will of course have to initialize
         # this chart in this method. I would recommend creating a nested function inside of this method
@@ -279,6 +285,15 @@ class Parser(object):
 
         # initialize chart
         for i, word in enumerate(list_of_words):
+            # if word == "'s":
+            #     for nonterm, i in [('VBZ', 0.5), ('POS', 0.5)]:
+            #         prob = math.log(0.5, i)
+            #         if nonterm not in chart[0][i] or prob > chart[0][i][nonterm]:
+            #             chart[0][i][nonterm] = prob
+            #             backptrs[0][i][nonterm] = word
+            if word == UNKNOWN_TERMINAL:
+                print("word", word)
+
             for nonterm, prob in self.grammar.get_rules_to(word):
                 prob = math.log(prob, log_base)
                 if nonterm not in chart[0][i] or prob > chart[0][i][nonterm]:
@@ -293,6 +308,22 @@ class Parser(object):
             tr, tc = target_coords
             lr, lc = left_prod_coords
             rr, rc = right_prod_coords
+
+            # only left_prob_coords
+            for lprod_nonterm, lprod_prob in chart[lr][lc].items():
+                # print("lprod", lprod, "lprod_prob", lprod_prob)
+                for nonterm, rule_prob in self.grammar.get_rules_to(lprod_nonterm):
+                    # print("lprod", lprod_nonterm, "nonterm", nonterm, "rule_prob", rule_prob)
+                    if rule_prob == 0:
+                        rule_prob = -math.inf
+                    else:
+                        rule_prob = math.log(rule_prob, log_base)
+                    prob = lprod_prob + rule_prob
+                    if nonterm not in chart[tr][tc] or prob > chart[tr][tc][nonterm]:
+                        chart[tr][tc][nonterm] = prob
+                        backptrs[tr][tc][nonterm] = (lprod_nonterm, lr, lc, None, -1, -1)
+
+
             for lprod, rprod in itertools.product(chart[lr][lc].items(), chart[rr][rc].items()):
                 lprod_nonterm, lprod_prob = lprod
                 rprod_nonterm, rprod_prob = rprod
@@ -312,9 +343,21 @@ class Parser(object):
 
         # return the best parse and its log probability
         if chart[n-1][0] == {}:
+            print("No parse found")
+            for i in range(n):
+                print(chart[i])
             return None, -math.inf
         best_items = chart[n-1][0].items()
         self.best_nonterm, self.best_logprob = max(best_items, key=lambda item: item[1])
 
         best_tree = self.generate_best_tree(backptrs)
+        # best_tree.restore_unit()
+        # best_tree.unbinarize()
+
+        # for str, float in self.grammar.get_rules_to("NP"):
+        #     print(str, float)
+
+        # for nonterm, prob in self.grammar.get_rules_to("NP_NNS", "PP"):
+        #     print(nonterm, prob)
+
         return best_tree, self.best_logprob

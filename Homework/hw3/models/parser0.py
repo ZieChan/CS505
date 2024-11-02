@@ -115,25 +115,34 @@ class Parser(object):
         return list_of_words
 
     def _traverse_backptrs_dfs(self: Type["Parser"],
-                            backptrs: object,
-                            cur_row: int,
-                            cur_col: int,
-                            cur_symb: str
-                            ) -> Node:
+                               backptrs: object,    # your own structure datatype goes here
+                               cur_row: int,        # the current row of the expansion in the backptrs
+                               cur_col: int,        # the current col of the expansion in the backptrs
+                               cur_symb: str        # the current symbol of the expansion
+                               ) -> Node:
+
+        # make the root of this subtree (no children yet)
         node = Node(cur_symb, [])
 
+        # TODO: complete me!
+        # This method should walk through your backpointers structure (you can do this recursively or iteratively)
+        # and build the tree structure.
+        
+        # print(backptrs[cur_row][cur_col])
+        # print("cur_symb", cur_symb)
         if cur_row == 0:
             last_node = Node(backptrs[cur_row][cur_col][cur_symb], [])
             node.append_child(last_node)
             return node
-        else:
-            l_child_symb, l_row, l_col, r_child_symb, r_row, r_col = backptrs[cur_row][cur_col][cur_symb]
-            left_child = self._traverse_backptrs_dfs(backptrs, l_row, l_col, l_child_symb)
-            right_child = self._traverse_backptrs_dfs(backptrs, r_row, r_col, r_child_symb)
-            node.append_child(left_child)
-            node.append_child(right_child)
-            return node
+        left_row, left_col, right_row, right_col = backptrs[cur_row][cur_col][cur_symb]
+        left_symb = list(backptrs[left_row][left_col].keys())[0]
+        right_symb = list(backptrs[right_row][right_col].keys())[0]
+        left_child = self._traverse_backptrs_dfs(backptrs, left_row, left_col, left_symb)
+        right_child = self._traverse_backptrs_dfs(backptrs, right_row, right_col, right_symb)
+        node.append_child(left_child)
+        node.append_child(right_child)
 
+        return node
 
     def generate_best_tree(self: Type["Parser"],
                            backptrs: object         # your own structure datatype goes here
@@ -287,34 +296,33 @@ class Parser(object):
 
 
         def update_cky_viterbi_chart(target_coords: Tuple[int, int],
-                                    left_prod_coords: Tuple[int, int],
-                                    right_prod_coords: Tuple[int, int]
-                                    ) -> None:
-            tr, tc = target_coords
-            lr, lc = left_prod_coords
-            rr, rc = right_prod_coords
-            for lprod, rprod in itertools.product(chart[lr][lc].items(), chart[rr][rc].items()):
-                lprod_nonterm, lprod_prob = lprod
-                rprod_nonterm, rprod_prob = rprod
+                                        left_prod_coords: Tuple[int, int],
+                                        right_prod_coords: Tuple[int, int]
+                                        ) -> None:
+                tr, tc = target_coords
+                lr, lc = left_prod_coords
+                rr, rc = right_prod_coords
+                for lprod, rprod in itertools.product(chart[lr][lc].items(), chart[rr][rc].items()):
+                    lprod_nonterm, lprod_prob = lprod
+                    rprod_nonterm, rprod_prob = rprod
 
-                for nonterm, rule_prob in self.grammar.get_rules_to(lprod_nonterm, rprod_nonterm):
-                    if rule_prob == 0:
-                        rule_prob = -math.inf
-                    else:
-                        rule_prob = math.log(rule_prob, log_base)
-                    prob = lprod_prob + rprod_prob + rule_prob
-                    if nonterm not in chart[tr][tc] or prob > chart[tr][tc][nonterm]:
-                        chart[tr][tc][nonterm] = prob
-                        backptrs[tr][tc][nonterm] = (lprod_nonterm, lr, lc, rprod_nonterm, rr, rc)
-
+                    for nonterm, rule_prob in self.grammar.get_rules_to(lprod_nonterm, rprod_nonterm):
+                        if rule_prob == 0:
+                            rule_prob = -math.inf
+                        else:
+                            rule_prob = math.log(rule_prob, log_base)
+                        prob = lprod_prob + rprod_prob + rule_prob
+                        if nonterm not in chart[tr][tc] or prob > chart[tr][tc][nonterm]:
+                            chart[tr][tc][nonterm] = prob
+                            backptrs[tr][tc][nonterm] = (lr, lc, rr, rc) 
 
         self._cky_traverse(list_of_words, update_cky_viterbi_chart)
 
         # return the best parse and its log probability
         if chart[n-1][0] == {}:
             return None, -math.inf
-        best_items = chart[n-1][0].items()
-        self.best_nonterm, self.best_logprob = max(best_items, key=lambda item: item[1])
-
+        keys = chart[n-1][0].keys()
+        self.best_nonterm = list(keys)[0]
+        self.best_logprob = chart[n-1][0][self.best_nonterm]
         best_tree = self.generate_best_tree(backptrs)
         return best_tree, self.best_logprob

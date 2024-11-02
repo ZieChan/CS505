@@ -25,6 +25,7 @@ UNKNOWN_TERMINAL: str = "<unk>"
 class Parser(object):
     def __init__(self: Type["Parser"]) -> None:
         self.grammar: PCFG = PCFG()
+        self.left_to_right = {}
 
     def __str__(self: Type["Parser"]) -> str:
         return "%s" % self.grammar
@@ -33,7 +34,8 @@ class Parser(object):
         return "%s" % self
 
     def _update_grammar_dfs(self: Type["Parser"],
-                            n: Node                 # the root of the subtree we are updating the grammar with
+                            n: Node,                 # the root of the subtree we are updating the grammar with
+                            parent: str = None       # the parent of the root node
                             ) -> None:
         # TODO: Complete me!
         # This method should, given a node, look at its label (either a nonterminal or a terminal symbol)
@@ -51,10 +53,14 @@ class Parser(object):
             return
         else:
             self.grammar.add_rule(n.label, tuple(child.label for child in n.children))
+            self.grammar.add_rule_parent(parent, tuple(child.label for child in n.children))
+            if len(n.children) == 2:
+                if n.children[0].label not in self.left_to_right:
+                    self.left_to_right[n.children[0].label] = set()
+                self.left_to_right[n.children[0].label].add(n.children[1].label)
+
             for child in n.children:
-                self._update_grammar_dfs(child)
-
-
+                self._update_grammar_dfs(child, n.label)
 
 
     def _update_grammar_with_tree(self: Type["Parser"],
@@ -118,9 +124,11 @@ class Parser(object):
                             backptrs: object,
                             cur_row: int,
                             cur_col: int,
-                            cur_symb: str
+                            cur_symb: str,
+                            parent_symbol: str = None
                             ) -> Node:
         node = Node(cur_symb, [])
+        self.get_parent[cur_row][cur_col] = parent_symbol
 
         if cur_row == 0:
             last_node = Node(backptrs[cur_row][cur_col][cur_symb], [])
@@ -128,8 +136,8 @@ class Parser(object):
             return node
         else:
             l_child_symb, l_row, l_col, r_child_symb, r_row, r_col = backptrs[cur_row][cur_col][cur_symb]
-            left_child = self._traverse_backptrs_dfs(backptrs, l_row, l_col, l_child_symb)
-            right_child = self._traverse_backptrs_dfs(backptrs, r_row, r_col, r_child_symb)
+            left_child = self._traverse_backptrs_dfs(backptrs, l_row, l_col, l_child_symb, cur_symb)
+            right_child = self._traverse_backptrs_dfs(backptrs, r_row, r_col, r_child_symb, cur_symb)
             node.append_child(left_child)
             node.append_child(right_child)
             return node
@@ -276,9 +284,27 @@ class Parser(object):
         backptrs: Sequence[Sequence[Mapping[str, Tuple[int, int, int, int]]]] = [[{} for _ in range(len(list_of_words) + 1)]
                                                                 for i in range(len(list_of_words) + 1)]
         
+        self.get_parent: Sequence[Sequence[str]] = [[None for _ in range(len(list_of_words) + 1)]
+                                                              for i in range(len(list_of_words) + 1)]
+        
 
         # initialize chart
         for i, word in enumerate(list_of_words):
+            if word == UNKNOWN_TERMINAL and i > 0:
+                last_word = list_of_words[i-1]
+                nonterm_list: set = set()
+                for nonterm, prob in self.grammar.get_rules_to(last_word):
+                    if nonterm in self.left_to_right:
+                        right_nonterm_list = self.left_to_right[nonterm]
+                        for right_nonterm in right_nonterm_list:
+                            if right_nonterm not in nonterm_list:
+                                nonterm_list.add(right_nonterm)
+                SUM = len(nonterm_list)
+                for nonterm in nonterm_list:
+                    chart[0][i][nonterm] = math.log(1/SUM, log_base)
+                    backptrs[0][i][nonterm] = word
+                    
+                
             for nonterm, prob in self.grammar.get_rules_to(word):
                 prob = math.log(prob, log_base)
                 if nonterm not in chart[0][i] or prob > chart[0][i][nonterm]:
@@ -297,6 +323,13 @@ class Parser(object):
                 lprod_nonterm, lprod_prob = lprod
                 rprod_nonterm, rprod_prob = rprod
 
+                if self.left_to_right.get(lprod_nonterm) is None:
+                    continue
+                else:
+                    right_nonterm_list = self.left_to_right[lprod_nonterm]
+                    if rprod_nonterm not in right_nonterm_list:
+                        continue
+
                 for nonterm, rule_prob in self.grammar.get_rules_to(lprod_nonterm, rprod_nonterm):
                     if rule_prob == 0:
                         rule_prob = -math.inf
@@ -310,6 +343,64 @@ class Parser(object):
 
         self._cky_traverse(list_of_words, update_cky_viterbi_chart)
 
+        # ---------------------------------------------------------------------------------------
+        # vertical markovization
+
+        # chart_new: Sequence[Sequence[Mapping[str, float]]] = [[{} for _ in range(len(list_of_words) + 1)]
+        #                                                       for i in range(len(list_of_words) + 1)]
+        # backptrs_new: Sequence[Sequence[Mapping[str, Tuple[int, int, int, int]]]] = [[{} for _ in range(len(list_of_words) + 1)]
+        #                                                         for i in range(len(list_of_words) + 1)]
+
+        # # initialize chart again
+        # for i, word in enumerate(list_of_words):
+        #     parent_nonterm = self.get_parent[0][i]
+        #     possible_nonterms = set()
+        #     if parent_nonterm is not None:
+        #         for production, _ in self.grammar.get_rules_from(parent_nonterm):
+        #             for nonterm in production.productions:
+        #                 possible_nonterms.add(nonterm)
+
+        #     for nonterm, prob in self.grammar.get_rules_to(word):
+        #         if nonterm in possible_nonterms or parent_nonterm is None:
+        #             prob = math.log(prob, log_base)
+        #             if nonterm not in chart_new[0][i] or prob > chart_new[0][i][nonterm]:
+        #                 chart_new[0][i][nonterm] = prob
+        #                 backptrs_new[0][i][nonterm] = word
+                                                            
+
+        # def update_cky_viterbi_chart_vertical_markovization(target_coords: Tuple[int, int],
+        #                                                     left_prod_coords: Tuple[int, int],
+        #                                                     right_prod_coords: Tuple[int, int]
+        #                                                     ) -> None:
+
+        #     tr, tc = target_coords
+        #     parent_nonterm = self.get_parent[tr][tc]
+        #     possible_nonterms = set()
+        #     if parent_nonterm is not None:
+        #         for production, _ in self.grammar.get_rules_from(parent_nonterm):
+        #             for nonterm in production.productions:
+        #                 possible_nonterms.add(nonterm)
+
+        #     lr, lc = left_prod_coords
+        #     rr, rc = right_prod_coords
+        #     for lprod, rprod in itertools.product(chart_new[lr][lc].items(), chart_new[rr][rc].items()):
+        #         lprod_nonterm, lprod_prob = lprod
+        #         rprod_nonterm, rprod_prob = rprod
+        #         for nonterm, rule_prob in self.grammar.get_rules_to(lprod_nonterm, rprod_nonterm):
+        #             if nonterm in possible_nonterms or parent_nonterm is None:
+        #                 if rule_prob == 0:
+        #                     rule_prob = -math.inf
+        #                 else:
+        #                     rule_prob = math.log(rule_prob, log_base)
+        #                 prob = lprod_prob + rprod_prob + rule_prob
+        #                 if nonterm not in chart_new[tr][tc] or prob > chart_new[tr][tc][nonterm]:
+        #                     chart_new[tr][tc][nonterm] = prob
+        #                     backptrs_new[tr][tc][nonterm] = (lprod_nonterm, lr, lc, rprod_nonterm, rr, rc)
+
+        # self._cky_traverse(list_of_words, update_cky_viterbi_chart_vertical_markovization)
+
+        # ---------------------------------------------------------------------------------------
+
         # return the best parse and its log probability
         if chart[n-1][0] == {}:
             return None, -math.inf
@@ -317,4 +408,5 @@ class Parser(object):
         self.best_nonterm, self.best_logprob = max(best_items, key=lambda item: item[1])
 
         best_tree = self.generate_best_tree(backptrs)
+
         return best_tree, self.best_logprob
