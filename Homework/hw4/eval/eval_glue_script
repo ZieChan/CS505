@@ -1,0 +1,12 @@
+#!/bin/bash
+
+FILE=$1
+BASEDIR=$(dirname "$0")
+
+if [[ $# -eq 2 ]]; then
+    LOGFILE=$2
+    (perl $BASEDIR/conlleval.pl < $FILE) > $LOGFILE
+else
+    perl $BASEDIR/conlleval.pl < $FILE
+fi
+
