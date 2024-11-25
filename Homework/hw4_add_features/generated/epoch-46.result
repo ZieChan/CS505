@@ -1,0 +1,12 @@
+processed 61908 tokens with 3473 phrases; found: 1364 phrases; correct: 534.
+accuracy:  91.06%; precision:  39.15%; recall:  15.38%; FB1:  22.08
+          company: precision:  54.97%; recall:  16.91%; FB1:  25.86  191
+         facility: precision:  13.51%; recall:   3.95%; FB1:   6.12  74
+          geo-loc: precision:  51.52%; recall:  26.87%; FB1:  35.32  460
+            movie: precision:   0.00%; recall:   0.00%; FB1:   0.00  5
+      musicartist: precision:  39.58%; recall:   9.95%; FB1:  15.90  48
+            other: precision:  48.09%; recall:  15.07%; FB1:  22.95  183
+           person: precision:  21.01%; recall:  11.20%; FB1:  14.61  257
+          product: precision:  23.68%; recall:   3.66%; FB1:   6.34  38
+       sportsteam: precision:  11.43%; recall:   8.16%; FB1:   9.52  105
+           tvshow: precision:   0.00%; recall:   0.00%; FB1:   0.00  3
